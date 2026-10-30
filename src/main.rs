@@ -1,38 +1,47 @@
 mod ast;
 mod lexer;
+mod parser;
 
 use lexer::Lexer;
+use parser::Parser;
 
 fn main() {
     let source = r#"
-        let x = 42;
-        let name = "World";
-        print "Hello, " + name + "!";
-
-        fn greet(person) {
-            return "Hi, " + person;
+        let x = 5 + 3 * 2;
+        
+        fn factorial(n) {
+            if n <= 1 {
+                return 1;
+            }
+            return n * factorial(n - 1);
         }
-
-        if x > 10 {
-            print "Big number";
-        }
+        
+        print factorial(5);
     "#;
 
     let mut lexer = Lexer::new(source.to_string());
     let result = lexer.parse_input_into_tokens();
 
+    let tokens = match result {
+        Ok(tokens) => tokens,
+        Err(e) => {
+            eprintln!("Lexer error: {}", e);
+            return;
+        }
+    };
+
+    let mut parser = Parser::new(tokens);
+    let result = parser.parse();
+
     match result {
-        Ok(tokens) => {
-            println!("Tokens:");
-            for token_info in tokens {
-                println!(
-                    "   {:?} at line {}, col {}",
-                    token_info.token, token_info.line, token_info.column,
-                );
+        Ok(statements) => {
+            println!("AST:");
+            for stmt in statements {
+                println!("{:#?}", stmt);
             }
         }
         Err(e) => {
-            eprintln!("Lexer error: {}", e);
+            eprintln!("Parser error: {}", e);
         }
     }
 }
